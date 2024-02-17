@@ -81,25 +81,27 @@ def analyze_predictions(folder_path, positive_words, negative_words):
         df['AnalysisResult'] = analysis_results
         df.to_csv(os.path.join(folder_path, file), index=False)
 
+        result_counts = pd.Series(analysis_results).value_counts(normalize=True) * 100
+
+        filtered_df = df[df['AnalysisResult'] != 'none']
+        consistency_count = (filtered_df['AnalysisResult'] == 'exact').sum() + (filtered_df['AnalysisResult'] == 'same').sum()
+        consistency_percentage = (consistency_count / len(filtered_df)) * 100 if len(filtered_df) > 0 else 0
+
+        positive_df = filtered_df[filtered_df['Sentiment'] == 'positive']
+        positive_consistency_count = (positive_df['AnalysisResult'] == 'exact').sum() + (positive_df['AnalysisResult'] == 'same').sum()
+        positive_consistency_percentage = (positive_consistency_count / len(positive_df)) * 100 if len(positive_df) > 0 else 0
+
+        negative_df = filtered_df[filtered_df['Sentiment'] == 'negative']
+        negative_consistency_count = (negative_df['AnalysisResult'] == 'exact').sum() + (negative_df['AnalysisResult'] == 'same').sum()
+        negative_consistency_percentage = (negative_consistency_count / len(negative_df)) * 100 if len(negative_df) > 0 else 0
+
+        # Print results
         print('---------------')
         print(f"Statistics for {file.replace('-predictions.csv', '')}:\n")
-        print("Including None:")
-        result_counts = pd.Series(analysis_results).value_counts(normalize=True) * 100
-        print(result_counts.round(2).to_string())
-        total_results = len(analysis_results)
-        consistency_count = analysis_results.count('exact') + analysis_results.count('same')
-        consistency_percentage = (consistency_count / total_results) * 100
+        print(f"Total Predictions:\n{result_counts.round(2).to_string()}")
         print(f"Consistency - {consistency_percentage:.2f}%")
-
-
-        print("\nExcluding None:")
-        filtered_results = [result for result in analysis_results if result != 'none']
-        result_counts_filtered = pd.Series(filtered_results).value_counts(normalize=True) * 100
-        print(result_counts_filtered.round(2).to_string())
-        total_results = len(filtered_results)
-        consistency_count = filtered_results.count('exact') + filtered_results.count('same')
-        consistency_percentage = (consistency_count / total_results) * 100
-        print(f"Consistency - {consistency_percentage:.2f}%")
+        print(f"Positive Consistency - {positive_consistency_percentage:.2f}%")
+        print(f"Negative Consistency - {negative_consistency_percentage:.2f}%")
         print('---------------')
         
 def main():
