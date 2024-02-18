@@ -95,7 +95,6 @@ def analyze_predictions(folder_path, positive_words, negative_words):
         negative_consistency_count = (negative_df['AnalysisResult'] == 'exact').sum() + (negative_df['AnalysisResult'] == 'same').sum()
         negative_consistency_percentage = (negative_consistency_count / len(negative_df)) * 100 if len(negative_df) > 0 else 0
 
-        # Print results
         print('---------------')
         print(f"Statistics for {file.replace('-predictions.csv', '')}:\n")
         print(f"Total Predictions:\n{result_counts.round(2).to_string()}")
@@ -111,12 +110,12 @@ def main():
     ec = np.load(ec_path)
 
     positive_words = [
-    "more", "positive", "yes", "able", "increase", "sales", "sale", "best", "larger", "large", 
-    "good", "high", "higher", "up", "like", "right", "a lot of", "many", "much", "believe", "better", 
-    "revenue", "remain", "continuing", "continue", "approve", "grew", "growth", "grow", "short",
-    "improvement", "improve", "focus", "major", "strong", "full", "start", "progress", "greater",
-    "earnings", "well", "expect", "over", "forward", "margin", "profit", "benefits", "income",
-    "benefit", "completely", "most", "add", "unchange", "unchanged", "opportunities", "opportunity", "within"
+        "more", "positive", "yes", "able", "increase", "sales", "sale", "best", "larger", "large", 
+        "good", "high", "higher", "up", "like", "right", "a lot of", "many", "much", "believe", "better", 
+        "revenue", "remain", "continuing", "continue", "approve", "grew", "growth", "grow", "short",
+        "improvement", "improve", "focus", "major", "strong", "full", "start", "progress", "greater",
+        "earnings", "well", "expect", "over", "forward", "margin", "profit", "benefits", "income",
+        "benefit", "completely", "most", "add", "unchange", "unchanged", "opportunities", "opportunity", "within"
     ]
 
     negative_words = [
