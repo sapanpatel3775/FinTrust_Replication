@@ -197,28 +197,26 @@ def replace_words(sent):
     elif " with " in sent:
         return sent.replace( " with " , " without " )
     else:
-            return sent
+        return sent
 
 def main():
-        in_file = '../Used_Data/earnings_call.npy'
-        out_file = '../Used_Data/neg_earnings_call.npy'
+    in_file = '../Used_Data/earnings_call.npy'
+    out_file = '../Used_Data/neg_earnings_call.npy'
 
-        data = np.load(in_file)
+    data = np.load(in_file)
 
-        for row in data.shape[0]:
-                date = data[row][0]
-                company = data[row][1]
-                text = data[row][3]
-                sentences = text.split('\n')
-                negated_sentences = []
-                for sentence in sentences:
-                        negated_sentences
+    for row in range(data.shape[0]):
+        text = data[row][2]
+        sentences = text.split('\n')
+        negated_sentences = []
+        for sentence in sentences:
+            negated_sentences.append(replace_words(sentence))
 
-        print(data)
-        return
-
-
-
+        negated_text = '\n'.join(negated_sentences)
+        data[row][2] = negated_text
+        
+    np.save(out_file, data)
+    return
 
 if __name__ == "__main__":
-        main()
+    main()
