@@ -106,7 +106,7 @@ def analyze_predictions(folder_path, positive_words, negative_words):
 def main():
     device = get_device()
 
-    ec_path = os.path.join('..', 'Data', 'earnings_call.npy')
+    ec_path = os.path.join('..', 'Used_Data', 'earnings_call.npy')
     ec = np.load(ec_path)
 
     positive_words = [
