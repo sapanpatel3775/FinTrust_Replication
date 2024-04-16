@@ -30,7 +30,11 @@ def measure_consistency(data, prompt, model_name, device):
         splits = []
         for i in range(transcripts.shape[0]):
             splits.append(transcripts[i].split('\n'))
-        splits = np.array(splits)
+        # Very wierd inexplicable bug where the Transitive Exxon has less lines than all others - cant figure out why
+        try:
+            splits = np.array(splits)
+        except:
+            continue
         for sentence_idx in range(splits.shape[1]):
             pred = [date, company, sentence_idx]
             for i in range(splits.shape[0]):
@@ -58,7 +62,6 @@ def main():
     device = get_device()
 
     data = load_joined()
-    print(data.shape)
 
     prompt = """
     Given the following text from an earnings call:
