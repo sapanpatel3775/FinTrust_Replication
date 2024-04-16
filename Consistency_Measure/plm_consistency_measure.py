@@ -31,7 +31,7 @@ def measure_consistency(data, prompt, model_name, device):
         for i in range(transcripts.shape[0]):
             splits.append(transcripts[i].split('\n'))
         splits = np.array(splits)
-        for sentence_idx in tqdm(range(splits.shape[1]), desc=f"Comparing sentences for {company}", total=splits.shape[1]):
+        for sentence_idx in range(splits.shape[1]):
             pred = [date, company, sentence_idx]
             for i in range(splits.shape[0]):
                 pred.append(fill_mask(prompt.replace('[PHRASE]', splits[i, sentence_idx])))
