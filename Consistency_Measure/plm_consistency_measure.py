@@ -22,7 +22,7 @@ def measure_consistency(data, prompt, model_name, device):
     model = AutoModelForMaskedLM.from_pretrained(model_name).to(device)
     fill_mask = pipeline('fill-mask', model=model, tokenizer=tokenizer, device=device)
 
-    predictions = pd.DataFrame(columns=['Date','Company', 'Sentence', 'Original', 'Negative', 'Symmetric', 'Transitive'])
+    predictions = pd.DataFrame(columns=['Date','Company', 'Sentence', 'Original', 'Negative', 'Symmetric', 'Transitive', 'Additive'])
     for row_idx in tqdm(range(data.shape[0]), desc=f"Predicting with {model_name}", total=data.shape[0]):
         date = data[row_idx, 0]
         company = data[row_idx, 1]
@@ -34,11 +34,12 @@ def measure_consistency(data, prompt, model_name, device):
         try:
             splits = np.array(splits)
         except:
+            print(f"\nError with {company} - arrays are different lengths\n")
             continue
         for sentence_idx in range(splits.shape[1]):
             pred = [date, company, sentence_idx]
             for i in range(splits.shape[0]):
-                pred.append(fill_mask(prompt.replace('[PHRASE]', splits[i, sentence_idx])))
+                pred.append(fill_mask(prompt.replace('[PHRASE]', splits[i, sentence_idx]))[0]['token_str'])
             predictions.loc[len(predictions.index)] = pred
     return predictions
 
@@ -49,14 +50,16 @@ def load_joined():
     ec_path = os.path.join('..', 'Used_Data', 'earnings_call.npy')
     neg_ec_path = os.path.join('..', 'Used_Data', 'neg_earnings_call.npy')
     sym_ec_path = os.path.join('..', 'Used_Data', 'sym_earnings_call.npy')
-    tra_path = os.path.join('..', 'Used_Data', 'tra_earnings_call.npy')
+    tra_ec_path = os.path.join('..', 'Used_Data', 'tra_earnings_call.npy')
+    add_ec_path = os.path.join('..', 'Used_Data', 'add_earnings_call.npy')
 
     ec = np.load(ec_path)
     neg_ec = np.load(neg_ec_path)
     sym_ec = np.load(sym_ec_path)
-    tra_ec = np.load(tra_path)
+    tra_ec = np.load(tra_ec_path)
+    add_ec = np.load(add_ec_path)
 
-    return np.column_stack((ec, neg_ec[:, 2], sym_ec[:, 2], tra_ec[:, 2]))
+    return np.column_stack((ec, neg_ec[:, 2], sym_ec[:, 2], tra_ec[:, 2], add_ec[:, 2]))
         
 def main():
     device = get_device()
@@ -65,12 +68,12 @@ def main():
 
     prompt = """
     Given the following text from an earnings call:
+
     [PHRASE]
 
-    Based solely on the information provided in this text, do you predict the stock price for the associated company will go up or down in the near future? 
-    Please answer with either "up" or "down".
+    Based solely on the information provided in this text, do you predict the stock price for the associated company will go up or down in the near future?
 
-    The stock price for the associated company will go [MASK].
+    The stock price for the associated company will likely go [MASK].
     """
 
     models = [
