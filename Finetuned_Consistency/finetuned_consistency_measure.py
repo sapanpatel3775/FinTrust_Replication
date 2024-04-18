@@ -1,10 +1,26 @@
 import numpy as np
 import os
 import re
-from transformers import pipeline, AutoTokenizer, AutoModelForMaskedLM
+from transformers import pipeline, AutoTokenizer, AutoModelForMaskedLM, Trainer, TrainingArguments, DataCollatorForLanguageModeling
 from tqdm import tqdm
 import torch
 import pandas as pd
+
+class TextDataset(torch.utils.data.Dataset):
+    def __init__(self, file_paths, tokenizer, block_size=128):
+        self.examples = []
+        for file_path in file_paths:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                text = file.read()
+                tokenized_text = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(text))
+                for i in range(0, len(tokenized_text) - block_size + 1, block_size):
+                    self.examples.append(tokenizer.build_inputs_with_special_tokens(tokenized_text[i:i + block_size]))
+
+    def __len__(self):
+        return len(self.examples)
+
+    def __getitem__(self, i):
+        return torch.tensor(self.examples[i])
 
 def get_device():
     if torch.backends.mps.is_available():
@@ -17,9 +33,31 @@ def get_device():
         print("Using CPU")
         return torch.device("cpu")
  
-def measure_consistency(data, prompt, model_name, device):
+def measure_consistency(data, prompt, model_name, device, finetune_files):
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForMaskedLM.from_pretrained(model_name).to(device)
+
+    fine_tuning_dataset = TextDataset(finetune_files, tokenizer)
+
+    training_args = TrainingArguments(
+        output_dir='./results',
+        num_train_epochs=10,
+        per_device_train_batch_size=16,
+        per_device_eval_batch_size=64,
+        warmup_steps=500,
+        weight_decay=0.01,
+        logging_dir='./logs',
+    )
+
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=fine_tuning_dataset,
+        data_collator=DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=True, mlm_probability=0.15),
+    )
+
+    trainer.train()
+
     fill_mask = pipeline('fill-mask', model=model, tokenizer=tokenizer, device=device)
 
     predictions = pd.DataFrame(columns=['Date','Company', 'Sentence', 'Original', 'Negative', 'Symmetric', 'Transitive', 'Additive'])
@@ -122,6 +160,8 @@ def main():
         'distilbert-base-uncased',
         ]
     
+    file_paths = ['3M_Company_20170425.txt', 'Amazon_com_Inc_20170202.txt', 'Twitter_Inc_20170209.txt']
+    
     for model in tqdm(models, desc="Processing models"):
         model_predictions_path = f"./{model.replace('/', '-')}-predictions.csv"
         if not os.path.exists(model_predictions_path):
@@ -129,7 +169,8 @@ def main():
                 data,
                 prompt, 
                 model, 
-                device
+                device,
+                file_paths
             ).to_csv(model_predictions_path, index=False)
 
     analyze_predictions('.')
